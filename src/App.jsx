@@ -4,28 +4,27 @@ import { getProductos } from './services/api';
 
 function App() {
   const [productos, setProductos] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);  // 👈 NUEVO
-  const [error, setError] = useState(null);          // 👈 NUEVO
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const cargarProductos = async () => {
       try {
-        setIsLoading(true);      // 👈 Empezar a cargar
-        setError(null);          // 👈 Limpiar errores anteriores
+        setIsLoading(true);
+        setError(null);
         const data = await getProductos();
         setProductos(data);
       } catch (err) {
         setError('No pudimos cargar los productos. Verificá que el backend esté corriendo.');
         console.error(err);
       } finally {
-        setIsLoading(false);     // 👈 Terminar de cargar (siempre)
+        setIsLoading(false);
       }
     };
 
     cargarProductos();
   }, []);
 
-  // 👇 MOSTRAR ESTADO DE CARGA
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -34,7 +33,6 @@ function App() {
     );
   }
 
-  // 👇 MOSTRAR ESTADO DE ERROR
   if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -47,7 +45,6 @@ function App() {
     );
   }
 
-  // 👇 MOSTRAR CATÁLOGO VACÍO
   if (productos.length === 0) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -56,7 +53,6 @@ function App() {
     );
   }
 
-  // 👇 MOSTRAR CATÁLOGO CON PRODUCTOS
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow-md p-4">
@@ -82,9 +78,12 @@ function App() {
             <ProductCard 
               key={producto.id}
               nombre={producto.nombre}
-              precio={producto.precio}
+              precio_final={producto.precio_final}
               imagen_url={producto.imagen_url}
               descripcion={producto.descripcion}
+              cuotas_cantidad={producto.cuotas_cantidad}
+              cuotas_valor={producto.cuotas_valor}
+              garantia_meses={producto.garantia_meses}
             />
           ))}
         </div>
