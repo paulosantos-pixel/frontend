@@ -1,10 +1,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-export async function getProductos() {
+export async function getProductos({ page = 0, limit = 6, nombre = "" } = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}/productos`);
+    const params = new URLSearchParams({ skip: page * limit, limit });
+    if (nombre) params.append("nombre", nombre);
     
-    // 👇 AGREGAR ESTO: verificar que la respuesta sea ok
+    const response = await fetch(`${API_BASE_URL}/productos?${params}`);
+    
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
@@ -12,6 +14,6 @@ export async function getProductos() {
     return await response.json();
   } catch (error) {
     console.error('Error al obtener productos:', error);
-    throw error; // Re-lanzar el error para que el componente lo capture
+    throw error;
   }
 }
