@@ -1,11 +1,11 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-// ==================== AUTH ====================
 function authHeaders() {
   const token = localStorage.getItem("access_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// ==================== AUTH ====================
 export async function registrar(datos) {
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
@@ -42,5 +42,37 @@ export async function getProductos({ page = 0, limit = 6, nombre = "" } = {}) {
   if (nombre) params.append("nombre", nombre);
   const res = await fetch(`${BASE_URL}/productos/?${params}`);
   if (!res.ok) throw new Error(`Error ${res.status} al pedir los productos`);
+  return res.json();
+}
+
+// ==================== PEDIDOS ====================
+async function manejarRespuesta(res) {
+  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
+  if (res.status === 409) {
+    const { detail } = await res.json();
+    throw new Error(detail);
+  }
+  if (!res.ok) throw new Error("No se pudo confirmar la compra");
+  return res.json();
+}
+
+export async function crearPedido(items) {
+  const res = await fetch(`${BASE_URL}/pedidos/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({
+      items: items.map((i) => ({
+        producto_id: i.producto_id,
+        cantidad: i.cantidad,
+      })),
+    }),
+  });
+  return manejarRespuesta(res);
+}
+
+export async function getMisPedidos() {
+  const res = await fetch(`${BASE_URL}/pedidos/mios`, { headers: authHeaders() });
+  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
+  if (!res.ok) throw new Error("No se pudieron cargar tus pedidos");
   return res.json();
 }
