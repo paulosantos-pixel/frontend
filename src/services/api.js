@@ -76,3 +76,49 @@ export async function getMisPedidos() {
   if (!res.ok) throw new Error("No se pudieron cargar tus pedidos");
   return res.json();
 }
+
+// ==================== LEY 25.326 ====================
+export async function revocarPedido(pedidoId) {
+  const res = await fetch(`${BASE_URL}/pedidos/${pedidoId}/revocacion`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
+  if (res.status === 404) throw new Error("No existe ese pedido o no es tuyo");
+  if (res.status === 409) {
+    const { detail } = await res.json();
+    throw new Error(detail);
+  }
+  if (!res.ok) throw new Error("No se pudo revocar el pedido");
+  return res.json();
+}
+
+export async function getMisDatos() {
+  const res = await fetch(`${BASE_URL}/usuarios/me/datos`, { headers: authHeaders() });
+  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
+  if (!res.ok) throw new Error("No se pudieron cargar tus datos");
+  return res.json();
+}
+
+export async function exportarMisDatos() {
+  const res = await fetch(`${BASE_URL}/usuarios/me/exportar`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("No se pudieron exportar tus datos");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "mis-datos.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function eliminarMiCuenta() {
+  const res = await fetch(`${BASE_URL}/usuarios/me`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("No se pudo eliminar la cuenta");
+  return res.json();
+}
