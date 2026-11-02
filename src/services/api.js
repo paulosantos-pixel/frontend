@@ -5,7 +5,7 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// ==================== AUTH ====================
+// AUTH
 export async function registrar(datos) {
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
@@ -36,16 +36,32 @@ export async function getMe() {
   return res.json();
 }
 
-// ==================== PRODUCTOS ====================
+// PRODUCTOS
 export async function getProductos({ page = 0, limit = 6, nombre = "" } = {}) {
   const params = new URLSearchParams({ skip: page * limit, limit });
   if (nombre) params.append("nombre", nombre);
   const res = await fetch(`${BASE_URL}/productos/?${params}`);
-  if (!res.ok) throw new Error(`Error ${res.status} al pedir los productos`);
+  if (!res.ok) throw new Error(`Error ${res.status}`);
   return res.json();
 }
 
-// ==================== PEDIDOS ====================
+export async function subirImagen(productoId, archivo) {
+  const fd = new FormData();
+  fd.append("archivo", archivo);
+  const r = await fetch(`${BASE_URL}/productos/${productoId}/imagen`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: fd,
+  });
+  if (r.status === 413) throw new Error("La imagen pasa de 2 MB");
+  if (r.status === 415) throw new Error("Ese archivo no es una imagen");
+  if (r.status === 404) throw new Error("No existe ese producto");
+  if (r.status === 403) throw new Error("No sos administrador");
+  if (!r.ok) throw new Error("No se pudo subir la imagen");
+  return r.json();
+}
+
+// PEDIDOS
 async function manejarRespuesta(res) {
   if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
   if (res.status === 409) {
@@ -61,10 +77,7 @@ export async function crearPedido(items) {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
-      items: items.map((i) => ({
-        producto_id: i.producto_id,
-        cantidad: i.cantidad,
-      })),
+      items: items.map((i) => ({ producto_id: i.producto_id, cantidad: i.cantidad })),
     }),
   });
   return manejarRespuesta(res);
@@ -72,18 +85,16 @@ export async function crearPedido(items) {
 
 export async function getMisPedidos() {
   const res = await fetch(`${BASE_URL}/pedidos/mios`, { headers: authHeaders() });
-  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
   if (!res.ok) throw new Error("No se pudieron cargar tus pedidos");
   return res.json();
 }
 
-// ==================== LEY 25.326 ====================
+// LEY 25.326
 export async function revocarPedido(pedidoId) {
   const res = await fetch(`${BASE_URL}/pedidos/${pedidoId}/revocacion`, {
     method: "POST",
     headers: authHeaders(),
   });
-  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
   if (res.status === 404) throw new Error("No existe ese pedido o no es tuyo");
   if (res.status === 409) {
     const { detail } = await res.json();
@@ -95,15 +106,12 @@ export async function revocarPedido(pedidoId) {
 
 export async function getMisDatos() {
   const res = await fetch(`${BASE_URL}/usuarios/me/datos`, { headers: authHeaders() });
-  if (res.status === 401) throw new Error("Tu sesion vencio. Volve a entrar.");
   if (!res.ok) throw new Error("No se pudieron cargar tus datos");
   return res.json();
 }
 
 export async function exportarMisDatos() {
-  const res = await fetch(`${BASE_URL}/usuarios/me/exportar`, {
-    headers: authHeaders(),
-  });
+  const res = await fetch(`${BASE_URL}/usuarios/me/exportar`, { headers: authHeaders() });
   if (!res.ok) throw new Error("No se pudieron exportar tus datos");
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
