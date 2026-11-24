@@ -13,13 +13,23 @@ import Carrito from "./pages/Carrito";
 import MisPedidos from "./pages/MisPedidos";
 import MisDatos from "./pages/MisDatos";
 import Arrepentimiento from "./pages/Arrepentimiento";
+import { useConectado } from "./hooks/useConectado"; // Importamos el detector
 
 function App() {
+  const conectado = useConectado(); // Lo usamos acá
+
   return (
     <BrowserRouter>
       <AuthProvider>
         <CarritoProvider>
           <div className="min-h-screen bg-gray-100 flex flex-col">
+            {/* CARTEL DE SIN CONEXIÓN */}
+            {!conectado && (
+              <div className="bg-red-500 text-white text-center p-2 text-sm font-bold">
+                Sin conexión. Podés ver el catálogo, pero no comprar.
+              </div>
+            )}
+            
             <Navbar />
             <main className="flex-grow">
               <Routes>
