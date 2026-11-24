@@ -8,6 +8,19 @@ export default function Catalogo() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [busqueda, setBusqueda] = useState("");
+  
+  // NUEVO: Estado para el minuto de frío de Render
+  const [lento, setLento] = useState(false);
+
+  // NUEVO: Temporizador de 5 segundos
+  useEffect(() => {
+    if (!isLoading) {
+      setLento(false);
+      return;
+    }
+    const t = setTimeout(() => setLento(true), 5000);
+    return () => clearTimeout(t);
+  }, [isLoading]);
 
   useEffect(() => {
     const cargarProductos = async () => {
@@ -37,9 +50,28 @@ export default function Catalogo() {
           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
-      {isLoading && (<div className="text-center py-10"><p className="text-gray-500">Cargando productos...</p></div>)}
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"><p>{error}</p></div>)}
-      {!isLoading && !error && productos.length === 0 && (<div className="text-center py-10"><p className="text-gray-500">No hay productos disponibles.</p></div>)}
+
+      {/* MODIFICADO: Ahora muestra el aviso de despertar */}
+      {isLoading && (
+        <div className="text-center py-10">
+          <p className="text-gray-500 text-lg" role="status">
+            {lento ? "Despertando el servidor, puede tardar un minuto…" : "Cargando productos..."}
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <p>{error}</p>
+        </div>
+      )}
+
+      {!isLoading && !error && productos.length === 0 && (
+        <div className="text-center py-10">
+          <p className="text-gray-500">No hay productos disponibles.</p>
+        </div>
+      )}
+
       {!isLoading && !error && productos.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {productos.map((producto) => (
@@ -57,10 +89,22 @@ export default function Catalogo() {
           ))}
         </div>
       )}
+
       <div className="flex justify-center items-center gap-4 mt-6">
-        <button disabled={page === 0} onClick={() => setPage(page - 1)} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700">Anterior</button>
+        <button 
+          disabled={page === 0} 
+          onClick={() => setPage(page - 1)} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700"
+        >
+          Anterior
+        </button>
         <span className="text-gray-700 font-medium">Pagina {page + 1}</span>
-        <button onClick={() => setPage(page + 1)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Siguiente</button>
+        <button 
+          onClick={() => setPage(page + 1)} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Siguiente
+        </button>
       </div>
     </div>
   );
