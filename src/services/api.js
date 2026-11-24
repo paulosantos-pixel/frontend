@@ -130,3 +130,40 @@ export async function eliminarMiCuenta() {
   if (!res.ok) throw new Error("No se pudo eliminar la cuenta");
   return res.json();
 }
+
+// --- ADMIN: CRUD PRODUCTOS ---
+export async function crearProducto(datos) {
+  const res = await fetch(`${BASE_URL}/productos/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(datos),
+  });
+  if (!res.ok) throw new Error("Error al crear producto");
+  return res.json();
+}
+
+export async function actualizarProducto(id, datos) {
+  const res = await fetch(`${BASE_URL}/productos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(datos),
+  });
+  if (!res.ok) throw new Error("Error al actualizar producto");
+  return res.json();
+}
+
+export async function eliminarProducto(id) {
+  const res = await fetch(`${BASE_URL}/productos/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Error al eliminar producto");
+  return res.json();
+}
+
+// --- ADMIN: PEDIDOS ---
+export async function getTodosLosPedidos() {
+  const res = await fetch(`${BASE_URL}/pedidos/todos`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Error al cargar los pedidos");
+  return res.json();
+}
