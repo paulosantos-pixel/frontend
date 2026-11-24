@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { getProductos, subirImagen, crearProducto, actualizarProducto, eliminarProducto, getTodosLosPedidos } from "../services/api";
+import { getProductos, subirImagen, crearProducto, actualizarProducto, eliminarProducto, getTodosLosPedidos, actualizarEstadoPedido } from "../services/api";
 import { urlImagen } from "../utils/imagenes";
 
 export default function PanelAdmin() {
@@ -127,6 +127,17 @@ export default function PanelAdmin() {
     }
   }
 
+  // --- LÓGICA DE PEDIDOS ---
+  async function handleCambiarEstado(id, nuevoEstado) {
+    try {
+      await actualizarEstadoPedido(id, nuevoEstado);
+      setMensaje("Estado del pedido actualizado correctamente");
+      cargarDatos(); // Recarga la tabla
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Panel de Administración</h1>
@@ -224,12 +235,12 @@ export default function PanelAdmin() {
 
       {/* CONTENIDO: PEDIDOS */}
       {tab === "pedidos" && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
           <h2 className="text-xl font-bold mb-4">Historial de Ventas</h2>
           {pedidos.length === 0 ? (
             <p className="text-gray-500">No hay pedidos registrados aún.</p>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="p-3 border-b">ID</th>
@@ -245,11 +256,27 @@ export default function PanelAdmin() {
                     <td className="p-3 border-b font-bold">#{pedido.id}</td>
                     <td className="p-3 border-b">{pedido.usuario_id}</td>
                     <td className="p-3 border-b">{new Date(pedido.creado_en).toLocaleDateString()}</td>
+                    
+                    {/* SELECTOR DE ESTADO */}
                     <td className="p-3 border-b">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs uppercase font-bold">
-                        {pedido.estado}
-                      </span>
+                      <select 
+                        value={pedido.estado}
+                        onChange={(e) => handleCambiarEstado(pedido.id, e.target.value)}
+                        className={`p-1 rounded font-bold text-xs uppercase border cursor-pointer ${
+                          pedido.estado === 'cancelado' ? 'bg-red-100 text-red-800 border-red-300' :
+                          pedido.estado === 'pagado' ? 'bg-green-100 text-green-800 border-green-300' :
+                          pedido.estado === 'enviado' ? 'bg-purple-100 text-purple-800 border-purple-300' :
+                          'bg-blue-100 text-blue-800 border-blue-300'
+                        }`}
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                        <option value="enviado">Enviado</option>
+                        <option value="entregado">Entregado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
                     </td>
+                    
                     <td className="p-3 border-b font-bold text-green-600">${pedido.total}</td>
                   </tr>
                 ))}
