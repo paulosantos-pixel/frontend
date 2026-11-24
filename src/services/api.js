@@ -171,3 +171,14 @@ export async function eliminarMiCuenta() {
   if (!res.ok) throw new Error("No se pudo eliminar la cuenta");
   return res.json();
 }
+
+export async function eliminarPedido(id, password) {
+  const res = await fetch(`${BASE_URL}/pedidos/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ password }),
+  });
+  if (res.status === 400) throw new Error("Contraseña incorrecta. No se eliminó.");
+  if (!res.ok) throw new Error("Error al eliminar el pedido");
+  return res.json();
+}

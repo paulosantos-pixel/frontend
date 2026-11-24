@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { getProductos, subirImagen, crearProducto, actualizarProducto, eliminarProducto, getTodosLosPedidos, actualizarEstadoPedido } from "../services/api";
+import { getProductos, subirImagen, crearProducto, actualizarProducto, eliminarProducto, getTodosLosPedidos, actualizarEstadoPedido, eliminarPedido } from "../services/api";
 import { urlImagen } from "../utils/imagenes";
 
 export default function PanelAdmin() {
-  const [tab, setTab] = useState("productos"); // 'productos' o 'pedidos'
+  const [tab, setTab] = useState("productos");
   const [productos, setProductos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
 
-  // Estados del formulario
+  // Estados del formulario de productos
   const [editandoId, setEditandoId] = useState(null);
-  const [form, setForm] = useState({ nombre: "", descripcion: "", precio_final: 0, stock: 0, categoria_id: 1 });
+  const [form, setForm] = useState({ nombre: "", descripcion: "", precio_final: 0, stock: 0 });
 
   // Estados de la imagen
   const [archivo, setArchivo] = useState(null);
@@ -53,7 +53,7 @@ export default function PanelAdmin() {
         ...form,
         precio_final: parseFloat(form.precio_final),
         stock: parseInt(form.stock),
-        categoria_id: 1, // Asumimos que existe la categoría 1 (Jugos)
+        categoria_id: 1,
         cuotas_cantidad: 0, cuotas_valor: 0, garantia_meses: 0
       };
 
@@ -65,7 +65,7 @@ export default function PanelAdmin() {
         setMensaje("Producto creado con éxito");
       }
       
-      setForm({ nombre: "", descripcion: "", precio_final: 0, stock: 0, categoria_id: 1 });
+      setForm({ nombre: "", descripcion: "", precio_final: 0, stock: 0 });
       setEditandoId(null);
       cargarDatos();
     } catch (err) {
@@ -79,10 +79,9 @@ export default function PanelAdmin() {
       nombre: prod.nombre,
       descripcion: prod.descripcion || "",
       precio_final: prod.precio_final,
-      stock: prod.stock,
-      categoria_id: prod.categoria_id || 1
+      stock: prod.stock
     });
-    window.scrollTo(0, 0); // Sube para ver el formulario
+    window.scrollTo(0, 0);
   }
 
   async function borrarProducto(id) {
@@ -101,7 +100,6 @@ export default function PanelAdmin() {
     const f = e.target.files[0];
     if (!f) return;
     setError("");
-
     if (f.size > 2 * 1024 * 1024) {
       setError("La imagen no puede superar los 2 MB");
       return;
@@ -132,7 +130,20 @@ export default function PanelAdmin() {
     try {
       await actualizarEstadoPedido(id, nuevoEstado);
       setMensaje("Estado del pedido actualizado correctamente");
-      cargarDatos(); // Recarga la tabla
+      cargarDatos();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleBorrarPedido(id) {
+    const pwd = prompt("Para eliminar este pedido permanentemente, ingresá tu contraseña de administrador:");
+    if (!pwd) return;
+    
+    try {
+      await eliminarPedido(id, pwd);
+      setMensaje("Pedido eliminado correctamente");
+      cargarDatos();
     } catch (err) {
       setError(err.message);
     }
@@ -165,7 +176,6 @@ export default function PanelAdmin() {
       {tab === "productos" && (
         <div className="grid md:grid-cols-3 gap-6">
           
-          {/* FORMULARIO CREAR/EDITAR */}
           <div className="bg-white p-6 rounded-lg shadow-md h-fit">
             <h2 className="text-xl font-bold mb-4">{editandoId ? "Editar Producto" : "Nuevo Producto"}</h2>
             <form onSubmit={guardarProducto} className="space-y-3">
@@ -178,14 +188,13 @@ export default function PanelAdmin() {
                 {editandoId ? "Guardar Cambios" : "Crear Producto"}
               </button>
               {editandoId && (
-                <button type="button" onClick={() => { setEditandoId(null); setForm({ nombre: "", descripcion: "", precio_final: 0, stock: 0, categoria_id: 1 }); }} className="w-full bg-gray-300 text-gray-800 py-2 rounded font-bold mt-2">
+                <button type="button" onClick={() => { setEditandoId(null); setForm({ nombre: "", descripcion: "", precio_final: 0, stock: 0 }); }} className="w-full bg-gray-300 text-gray-800 py-2 rounded font-bold mt-2">
                   Cancelar Edición
                 </button>
               )}
             </form>
           </div>
 
-          {/* LISTA DE PRODUCTOS */}
           <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">Lista de Productos</h2>
             <div className="space-y-4">
@@ -211,7 +220,6 @@ export default function PanelAdmin() {
             </div>
           </div>
 
-          {/* SUBIR IMAGEN */}
           <div className="md:col-span-3 bg-gray-50 p-6 rounded-lg shadow-inner mt-4 border">
             <h2 className="text-xl font-bold mb-4">Subir Imagen a un Producto</h2>
             <div className="flex gap-4 items-center">
@@ -240,7 +248,7 @@ export default function PanelAdmin() {
           {pedidos.length === 0 ? (
             <p className="text-gray-500">No hay pedidos registrados aún.</p>
           ) : (
-            <table className="w-full text-left border-collapse min-w-[600px]">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="p-3 border-b">ID</th>
@@ -248,6 +256,7 @@ export default function PanelAdmin() {
                   <th className="p-3 border-b">Fecha</th>
                   <th className="p-3 border-b">Estado</th>
                   <th className="p-3 border-b">Total</th>
+                  <th className="p-3 border-b">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -257,7 +266,6 @@ export default function PanelAdmin() {
                     <td className="p-3 border-b">{pedido.usuario_id}</td>
                     <td className="p-3 border-b">{new Date(pedido.creado_en).toLocaleDateString()}</td>
                     
-                    {/* SELECTOR DE ESTADO */}
                     <td className="p-3 border-b">
                       <select 
                         value={pedido.estado}
@@ -278,6 +286,15 @@ export default function PanelAdmin() {
                     </td>
                     
                     <td className="p-3 border-b font-bold text-green-600">${pedido.total}</td>
+                    
+                    <td className="p-3 border-b">
+                      <button 
+                        onClick={() => handleBorrarPedido(pedido.id)} 
+                        className="text-red-600 hover:underline text-xs font-bold uppercase"
+                      >
+                        Borrar
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
