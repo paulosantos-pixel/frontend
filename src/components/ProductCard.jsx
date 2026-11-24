@@ -1,3 +1,4 @@
+import React from "react";
 import { useCarrito } from "../context/CarritoContext";
 import { urlImagen } from "../utils/imagenes";
 
